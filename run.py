@@ -37,9 +37,25 @@ def parse_args():
     return args
 
 
+def init_dist():
+    rank = int(os.getenv('SLURM_PROCID', '0'))
+    world_size = int(os.getenv('SLURM_NTASKS', '1'))
+
+    os.environ['RANK'] = str(rank)
+    os.environ['WORLD_SIZE'] = str(world_size)
+
+    if 'MASTER_ADDR' not in os.environ:
+        node_list = os.environ["SLURM_NODELIST"]
+        addr = subprocess.getoutput(f"scontrol show hostname {node_list} | head -n1")
+        os.environ['MASTER_ADDR'] = addr
+    if 'MASTER_PORT' not in os.environ:
+        os.environ['MASTER_PORT'] = '22110'
+
+
 def main():
     logger = get_logger('RUN')
 
+    init_dist()
     args = parse_args()
     assert len(args.data), '--data should be a list of data files'
 
