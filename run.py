@@ -38,18 +38,21 @@ def parse_args():
 
 
 def init_dist():
-    rank = int(os.getenv('SLURM_PROCID', '0'))
-    world_size = int(os.getenv('SLURM_NTASKS', '1'))
+    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
+        pass
+    elif 'SLURM_PROCID' in os.environ:
+        rank = int(os.getenv('SLURM_PROCID', '0'))
+        world_size = int(os.getenv('SLURM_NTASKS', '1'))
 
-    os.environ['RANK'] = str(rank)
-    os.environ['WORLD_SIZE'] = str(world_size)
+        os.environ['RANK'] = str(rank)
+        os.environ['WORLD_SIZE'] = str(world_size)
 
-    if 'MASTER_ADDR' not in os.environ:
-        node_list = os.environ["SLURM_NODELIST"]
-        addr = subprocess.getoutput(f"scontrol show hostname {node_list} | head -n1")
-        os.environ['MASTER_ADDR'] = addr
-    if 'MASTER_PORT' not in os.environ:
-        os.environ['MASTER_PORT'] = '22110'
+        if 'MASTER_ADDR' not in os.environ:
+            node_list = os.environ["SLURM_NODELIST"]
+            addr = subprocess.getoutput(f"scontrol show hostname {node_list} | head -n1")
+            os.environ['MASTER_ADDR'] = addr
+        if 'MASTER_PORT' not in os.environ:
+            os.environ['MASTER_PORT'] = '22110'
 
 
 def main():

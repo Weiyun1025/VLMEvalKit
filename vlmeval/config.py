@@ -96,15 +96,34 @@ llava_series = {
 }
 
 internvl_series = {
-    'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1'),
-    'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2'),
-    'InternVL-Chat-V1-2-Plus': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus'),
-    'InternVL-Chat-V1-5': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5'),
-    'InternVL-Chat-V2-0-20B': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_internlm2_20b_dynamic_res_finetune_datav56_1of2'),
-    'InternVL-Chat-V2-0-72B': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_qwen2_72b_dynamic_res_finetune_datav56_1of2-backup'),
-    'InternVL-Chat-V2-0-100B': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_internlm2_100b_dynamic_res_finetune_datav54_1of2'),
-    'Mini-InternVL-Chat-2B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-2B-V1-5'),
-    'Mini-InternVL-Chat-4B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-4B-V1-5'),
+    'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1', version='V1.1'),
+    'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2', version='V1.2'),
+    'InternVL-Chat-V1-2-Plus': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus', version='V1.2'),
+    'InternVL-Chat-V1-5': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5', version='V1.5'),
+    'Mini-InternVL-Chat-2B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-2B-V1-5', version='V1.5'),
+    'Mini-InternVL-Chat-4B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-4B-V1-5', version='V1.5'),
+    # InternVL2 series
+    'InternVL2-26B-v56': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_internlm2_20b_dynamic_res_finetune_datav56_1of2', version='V2.0'),
+    'InternVL2-26B-v57': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_internlm2_20b_dynamic_res_finetune_datav57_full', version='V2.0'),
+    'InternVL2-26B-v61': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_internlm2_20b_dynamic_res_finetune_datav61', version='V2.0'),
+    'InternVL2-78B-v54': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_qwen2_72b_dynamic_res_finetune_datav54_1of2', version='V2.0'),
+    'InternVL2-78B-v56': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_qwen2_72b_dynamic_res_finetune_datav56_1of2', version='V2.0'),
+    'InternVL2-78B-v58': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_qwen2_72b_dynamic_res_finetune_datav58_1of2', version='V2.0'),
+    'InternVL2-78B-v60': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_qwen2_72b_dynamic_res_finetune_datav60_full', version='V2.0'),
+    'InternVL2-108B-v54': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_internlm2_100b_dynamic_res_finetune_datav54_1of2', version='V2.0'),
+    'InternVL2-108B-v59': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_internlm2_100b_dynamic_res_finetune_datav59_1of2', version='V2.0'),
+    'InternVL2-2B-v55': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_internlm2_1_8b_dynamic_res_finetune_datav55', version='V2.0'),
+    'InternVL2-2B-v60': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_internlm2_1_8b_dynamic_res_finetune_datav60', version='V2.0'),
+    'InternVL2-2B-v61': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_internlm2_1_8b_dynamic_res_finetune_datav61', version='V2.0'),
+    'InternVL2-4B-v60': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_phi3_3_8b_dynamic_res_finetune_datav60', version='V2.0'),
+    'InternVL2-4B-v61': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/internvl_chat_v2_0_phi3_3_8b_dynamic_res_finetune_datav61', version='V2.0'),
+    'InternVL2-2B': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/share_internvl/InternVL2-2B', version='V2.0'),
+    'InternVL2-4B': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/share_internvl/InternVL2-4B', version='V2.0'),
+    'InternVL2-8B': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/share_internvl/InternVL2-8B', version='V2.0'),
+    'InternVL2-26B': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/share_internvl/InternVL2-26B', version='V2.0'),
+    'InternVL2-40B': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/share_internvl/InternVL2-40B', version='V2.0'),
+    'InternVL2-78B': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/share_internvl/InternVL2-78B', version='V2.0'),
+    'InternVL2-Llama3-76B': partial(InternVLChat, model_path='/mnt/petrelfs/wangweiyun/workspace_cz/InternVL/internvl_chat_dev/work_dirs/internvl_chat_v2_0/share_internvl/InternVL2-Llama3-76B', version='V2.0'),
 }
 
 yivl_series = {

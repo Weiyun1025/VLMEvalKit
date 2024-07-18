@@ -180,40 +180,28 @@ def split_model(model_path):
 
     return device_map, visible_devices
 
+
 class InternVLChat(BaseModel):
 
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path='OpenGVLab/InternVL-Chat-V1-5', load_in_8bit=False, **kwargs):
+    def __init__(self, model_path='OpenGVLab/InternVL-Chat-V1-5', version='V1.0', **kwargs):
         assert model_path is not None
         assert version_cmp(transformers.__version__, '4.36.2', 'ge')
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
         device_map, visible_devices = split_model(model_path=model_path)
-        device = visible_devices[0]
-        self.device = device
+
+        self.device = visible_devices[0]
         self.model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16,
                                                trust_remote_code=True,
-                                               device_map=device_map,
-                                               load_in_8bit=load_in_8bit).eval()
-        # if not load_in_8bit:
-        #     self.model = self.model.to(device)
+                                               device_map=device_map).eval()
+
         self.image_size = self.model.config.vision_config.image_size
-
-        if 'V1-1' in model_path:
-            kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=5)
-        else:
-            kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
-        kwargs_default.update(kwargs)
-        self.kwargs = kwargs_default
+        self.version = version
+        self.kwargs = kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
-
-        num_params = 0
-        for p in self.model.parameters():
-            num_params += p.numel()
-        if num_params >= 40e9:
-            self.kwargs['max_new_tokens'] = 256
 
     def use_custom_prompt(self, dataset):
         return True
@@ -246,16 +234,15 @@ class InternVLChat(BaseModel):
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
 
-        if 'V1-1' in self.model_path:
+        if self.version == 'V1.1':
             kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=5)
         else:
             kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
         self.kwargs = kwargs_default
+
         if dataset is not None and listinstr(['MME'], dataset):
             question = line['question']
             prompt = question + ' Answer the question using a single word or phrase.'
-            if 'V1-2' not in self.model_path:
-                self.kwargs = dict(do_sample=True, max_new_tokens=5, top_k=50, num_beams=5, top_p=0.9)
         elif dataset is not None and listinstr(['HallusionBench'], dataset):
             question = line['question']
             prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
@@ -274,23 +261,42 @@ class InternVLChat(BaseModel):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
         else:
             prompt = line['question']
-
         message = [dict(type='text', value=prompt)]
         message.extend([dict(type='image', value=s) for s in tgt_path])
-
         return message
 
-    def generate_v1_5(self, message, dataset=None):
-        image_num = len([x for x in message if x['type'] == 'image'])
-        prompt = '\n'.join([x['value'].strip() if x['type'] == 'text' else '<image>' for x in message])
+    def set_max_num(self, dataset):
         if dataset is not None and listinstr(['ChartQA_TEST', 'MMMU_DEV_VAL'], dataset):
             self.max_num = 12
         elif dataset is not None and listinstr(['DocVQA_VAL', 'DocVQA_TEST'], dataset):
             self.max_num = 18
         elif dataset is not None and listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench'], dataset):
             self.max_num = 24
+        elif dataset is not None and listinstr(['MMBench-Video'], dataset):
+            self.max_num = 1
         else:
             self.max_num = 6
+
+    def generate_v2(self, message, dataset=None):
+        image_num = len([x for x in message if x['type'] == 'image'])
+        if image_num == 1:
+            prompt = '<image>\n' + '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+        else:
+            prompt, image_idx = '', 1
+            for x in message:
+                if x['type'] == 'text':
+                    prompt += x['value']
+                elif x['type'] == 'image':
+                    prompt += f'<image-{image_idx}>'
+                    image_idx += 1
+            prompt = ' '.join([f'<image-{i + 1}>: <image>' for i in range(image_num)]) + '\n' + prompt
+        if listinstr(['MMBench-Video'], dataset):
+            prompt = prompt.replace('<image-1><image-2><image-3><image-4><image-5><image-6><image-7><image-8>', '')
+            prompt = prompt.replace('<image-9><image-10><image-11><image-12><image-13><image-14><image-15><image-16>', '')
+            for i in range(8):
+                prompt = prompt.replace(f'<image-{i + 1}>', f'Frame{i+1}')
+            prompt = prompt.replace('\nAnswer:', '')
+            prompt += '\nAnswer the question using a single word or phrase.'
         if image_num > 1:
             image_path = [x['value'] for x in message if x['type'] == 'image']
             num_patches_list = []
@@ -308,25 +314,40 @@ class InternVLChat(BaseModel):
             pixel_values = None
             num_patches_list = []
 
-        kwargs = self.kwargs.copy()
-        if listinstr([
-            'MME',
-            'POPE',
-            'MMMU_DEV_VAL',
-        ], dataset):
-            kwargs['max_new_tokens'] = 10
-
         with torch.no_grad():
-            # response = self.model.chat(self.tokenizer, pixel_values=pixel_values,
-            #                            question=prompt, generation_config=kwargs)
-            response = self.model.chat(
-                self.tokenizer,
-                pixel_values=pixel_values,
-                num_patches_list=num_patches_list,
-                question=prompt,
-                generation_config=kwargs,
-            )
-        response = response.split('[UNUSED_TOKEN_145]')[0]
+            try:
+                response = self.model.chat(
+                    self.tokenizer,
+                    pixel_values=pixel_values,
+                    num_patches_list=num_patches_list,
+                    question=prompt,
+                    generation_config=self.kwargs,
+                    verbose=True
+                )
+            except torch.cuda.OutOfMemoryError:
+                response = 'A'
+                torch.cuda.empty_cache()
+        return response
+
+    def generate_v1_5(self, message, dataset=None):
+        image_num = len([x for x in message if x['type'] == 'image'])
+        prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+        
+        if image_num > 1:
+            image_path = [x['value'] for x in message if x['type'] == 'image']
+            pixel_values_list = []
+            for file_name in image_path:
+                pixel_values_list.append(load_image(file_name, max_num=self.max_num).cuda().to(torch.bfloat16))
+            pixel_values = torch.cat(pixel_values_list, dim=0)
+        elif image_num == 1:
+            image_path = [x['value'] for x in message if x['type'] == 'image'][0]
+            pixel_values = load_image(image_path, max_num=self.max_num).cuda().to(torch.bfloat16)
+        else:
+            pixel_values = None
+            
+        with torch.no_grad():
+            response = self.model.chat(self.tokenizer, pixel_values=pixel_values,
+                                       question=prompt, generation_config=self.kwargs)
         return response
 
     def generate_v1_2(self, message, dataset=None):
@@ -342,7 +363,12 @@ class InternVLChat(BaseModel):
         return response
 
     def generate_inner(self, message, dataset=None):
-        if 'V1-1' in self.model_path or 'V1-2' in self.model_path:
+        self.set_max_num(dataset)
+        if self.version in ['V1.2', 'V1.5']:
             return self.generate_v1_2(message, dataset)
-        else:
+        if self.version == 'V1.5':
             return self.generate_v1_5(message, dataset)
+        elif self.version == 'V2.0':
+            return self.generate_v2(message, dataset)
+        else:
+            raise ValueError(f'Unsupported version: {self.version}')
