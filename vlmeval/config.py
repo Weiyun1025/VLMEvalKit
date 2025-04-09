@@ -676,6 +676,15 @@ internvl_series = {
         version="V2.0",
         use_mpo_prompt=True,
     ),
+    # Custom
+    "InternVL2_5-8B-MMR1-v3-2": partial(
+        InternVLChat, model_path="/mnt/petrelfs/wangweiyun/workspace_wwy/OpenRLHF-250228/outputs/internvl_v2_5/grpo_openrlhf_0_6_1_post1_mmr1_v3_2", version="V2.0",
+        use_r1_prompt=True,
+    ),
+    "InternVL2_5-8B-MMR1-v3-2-HF": partial(
+        InternVLChat, model_path="/mnt/petrelfs/wangweiyun/workspace_wwy/OpenRLHF-250228/outputs/internvl_v2_5/grpo_openrlhf_0_6_1_post1_mmr1_v3_2", version="V2.0",
+        use_r1_prompt=True, use_lmdeploy=False,
+    ),
 }
 
 sail_series = {

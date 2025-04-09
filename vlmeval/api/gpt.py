@@ -210,9 +210,13 @@ class OpenAIWrapper(BaseAPI):
             n=1,
             temperature=temperature,
             **kwargs)
+        proxies = {
+            "http": "http://closeai-proxy.pjlab.org.cn:23128",
+            "https": "http://closeai-proxy.pjlab.org.cn:23128"
+        }
         response = requests.post(
             self.api_base,
-            headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
+            headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1, proxies=proxies)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg

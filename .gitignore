@@ -165,11 +165,13 @@ cache_dir/*
 
 # Evaluation Outputs
 outputs/*
+outputs_excel/*
 demo.ipynb
 *json
 .vscode
 *.swp
 GPT4o_MINI/
+OpenGVLab
 
 2weiyun*
 script.py

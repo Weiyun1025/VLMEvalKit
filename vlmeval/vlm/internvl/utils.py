@@ -130,9 +130,13 @@ def split_model(model_path):
         gpus_per_process = int(os.environ['GPUS_PER_PROCESS'])
     else:
         gpus_per_process = 8  # default to use 8 GPUs for one model
-    gpus_per_process = min(gpus_per_process, num_gpus_per_node // local_world_size)
-    start_gpu = local_rank * gpus_per_process
+    # gpus_per_process = min(gpus_per_process, num_gpus_per_node // local_world_size)
+    gpus_per_process = num_gpus_per_node
+    # start_gpu = local_rank * gpus_per_process
+    start_gpu = 0
     end_gpu = start_gpu + gpus_per_process
+
+    print(f'{local_rank=}, {local_world_size=}, {start_gpu=}, {end_gpu=}, {num_gpus_per_node=}')
 
     assert end_gpu <= num_gpus_per_node, f"Process {local_rank} tries to access GPU {end_gpu}, " \
                                          f"but only {num_gpus_per_node} GPUs are available per node."
@@ -157,11 +161,14 @@ def split_model(model_path):
     device_map['mlp1'] = visible_devices[0]
     device_map['language_model.model.tok_embeddings'] = visible_devices[0]
     device_map['language_model.model.embed_tokens'] = visible_devices[0]
+    device_map['language_model.model.rotary_emb'] = visible_devices[0]
     device_map['language_model.output'] = visible_devices[0]
     device_map['language_model.model.norm'] = visible_devices[0]
     device_map['language_model.model.rotary_emb'] = visible_devices[0]
     device_map['language_model.lm_head'] = visible_devices[0]
     device_map[f'language_model.model.layers.{num_layers - 1}'] = visible_devices[0]
+
+    print(f'{rank=}, {visible_devices=}')
 
     return device_map, visible_devices
 
@@ -204,29 +211,31 @@ def split_model_old(model_name):
     return device_map
 
 
-def build_mcq_cot_prompt(line, prompt):
-    cot_prompt = (
-        "Answer the preceding multiple choice question. The last line of your response should follow "
-        "this format: 'Answer: \\boxed{$LETTER}' (without quotes), where LETTER is one of the options. "
-        "If you are uncertain or the problem is too complex, make a reasoned guess based on the "
-        "information provided. Avoid repeating steps indefinitely—provide your best guess even if "
-        "unsure. Think step by step logically, considering all relevant information before answering."
-    )
+def build_mcq_cot_prompt(line, prompt, cot_prompt=None):
+    if cot_prompt is None:
+        cot_prompt = (
+            "Answer the preceding multiple choice question. The last line of your response should follow "
+            "this format: 'Answer: \\boxed{$LETTER}' (without quotes), where LETTER is one of the options. "
+            "If you are uncertain or the problem is too complex, make a reasoned guess based on the "
+            "information provided. Avoid repeating steps indefinitely—provide your best guess even if "
+            "unsure. Think step by step logically, considering all relevant information before answering."
+        )
     prompt = prompt.replace("Answer with the option's letter from the given choices directly.", '').strip()
     prompt = prompt + '\n' + cot_prompt
 
     return prompt
 
 
-def build_qa_cot_prompt(line, prompt):
-    cot_prompt = (
-        "Answer the preceding question. The last line of your response should follow this format: "
-        "'Answer: \\boxed{$FINAL_ANSWER}' (without quotes), where 'FINAL_ANSWER' is your conclusion "
-        "based on the reasoning provided. If you are uncertain or the problem is too complex, make "
-        "a reasoned guess based on the information provided. Avoid repeating steps indefinitely—"
-        "provide your best guess even if unsure. Think step by step logically, considering all "
-        "relevant information before answering."
-    )
+def build_qa_cot_prompt(line, prompt, cot_prompt=None):
+    if cot_prompt is None:
+        cot_prompt = (
+            "Answer the preceding question. The last line of your response should follow this format: "
+            "'Answer: \\boxed{$FINAL_ANSWER}' (without quotes), where 'FINAL_ANSWER' is your conclusion "
+            "based on the reasoning provided. If you are uncertain or the problem is too complex, make "
+            "a reasoned guess based on the information provided. Avoid repeating steps indefinitely—"
+            "provide your best guess even if unsure. Think step by step logically, considering all "
+            "relevant information before answering."
+        )
     prompt = prompt + '\n' + cot_prompt
 
     return prompt

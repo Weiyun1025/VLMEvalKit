@@ -1,4 +1,19 @@
+import os
 import json
+
+if os.environ.get('AUTO_SPLIT', '0') == '1':
+    # os.environ.pop('CUDA_VISIBLE_DEVICES', None)
+    # print('enable AUTO_SPLIT')
+    TP = int(os.environ['TP'])
+    DEVICE_START_IDX = int(os.environ['SLURM_PROCID']) % 8
+    CUDA_VISIBLE_DEVICES = [str(i) for i in range(DEVICE_START_IDX, DEVICE_START_IDX + TP)]
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(CUDA_VISIBLE_DEVICES)
+    print(f"{os.environ['CUDA_VISIBLE_DEVICES']=}")
+else:
+    TP = 1
+    os.environ['CUDA_VISIBLE_DEVICES'] = str(int(os.environ['SLURM_PROCID']) % 8)
+    print(f"{os.environ['CUDA_VISIBLE_DEVICES']=}")
+
 
 import torch
 import torch.distributed as dist
@@ -151,6 +166,41 @@ You can launch the evaluation by setting either --data and --model or --config.
 
     args = parser.parse_args()
     return args
+
+
+def init_dist():
+    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
+        pass
+    elif 'SLURM_PROCID' in os.environ:
+        rank = int(os.getenv('SLURM_PROCID', '0'))
+        world_size = int(os.getenv('SLURM_NTASKS', '1'))
+        local_rank = rank % torch.cuda.device_count()
+        local_size = torch.cuda.device_count()
+
+        os.environ['RANK'] = str(rank)
+        os.environ['LOCAL_RANK'] = str(local_rank)
+        os.environ['WORLD_SIZE'] = str(world_size)
+        os.environ['LOCAL_WORLD_SIZE'] = str(local_size)
+
+        if 'MASTER_ADDR' not in os.environ:
+            node_list = os.environ["SLURM_NODELIST"]
+            addr = subprocess.getoutput(f"scontrol show hostname {node_list} | head -n1")
+            os.environ['MASTER_ADDR'] = addr
+        if 'MASTER_PORT' not in os.environ:
+            os.environ['MASTER_PORT'] = '22110'
+
+    if int(os.getenv('RANK', '0')) % TP != 0:
+        print(f"[SLURM_PROCID {int(os.environ['SLURM_PROCID'])}] Exit early")
+        exit(0)
+
+    if TP > 1:
+        os.environ['RANK'] = str(int(os.environ['RANK']) // TP)
+        # os.environ['LOCAL_RANK'] = str(int(os.environ['LOCAL_RANK']) // args.tp)
+        os.environ['LOCAL_RANK'] = str(int(os.environ['RANK']) % torch.cuda.device_count())
+        os.environ['WORLD_SIZE'] = str(int(os.environ['WORLD_SIZE']) // TP)
+        os.environ['LOCAL_WORLD_SIZE'] = str(8 // torch.cuda.device_count())
+        # different rank should use different gpu, otherwise the all gather operation will be blocked
+        torch.cuda.set_device(int(os.environ['RANK']) % torch.cuda.device_count())
 
 
 def main():
@@ -438,5 +488,6 @@ def main():
 
 
 if __name__ == '__main__':
+    init_dist()
     load_env()
     main()
